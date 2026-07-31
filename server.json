@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.dashboardbase/mcp",
+  "title": "Dashboardbase",
+  "description": "Validate Dashboardbase widget endpoint responses and setup files against the live contract.",
+  "repository": {
+    "url": "https://github.com/dashboardbase/mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://dashboardbase.com",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@dashboardbase/mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DASHBOARDBASE_API_URL",
+          "description": "Base URL of the Dashboardbase API. Defaults to https://api.dashboardbase.com.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

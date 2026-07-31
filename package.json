@@ -1,0 +1,58 @@
+{
+  "name": "@dashboardbase/mcp",
+  "version": "0.1.0",
+  "mcpName": "com.dashboardbase/mcp",
+  "description": "MCP server that validates Dashboardbase widget endpoint responses and setup files against the live contract.",
+  "type": "module",
+  "license": "MIT",
+  "author": "dashboardbase",
+  "homepage": "https://dashboardbase.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashboardbase/mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dashboardbase/mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "dashboardbase",
+    "dashboard",
+    "validation",
+    "validator",
+    "widget",
+    "claude",
+    "ai"
+  ],
+  "bin": {
+    "dashboardbase-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/*.test.ts",
+    "start": "node dist/index.js",
+    "check:manifests": "node scripts/check-manifests.mjs",
+    "sync:version": "node scripts/sync-version.mjs",
+    "bundle": "npm run build && node scripts/build-bundle.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

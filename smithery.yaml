@@ -1,0 +1,18 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      apiUrl:
+        type: string
+        title: API base URL
+        description: Base URL of the Dashboardbase API. Leave unset to use the public API.
+        default: https://api.dashboardbase.com
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@dashboardbase/mcp'],
+      env: config.apiUrl ? { DASHBOARDBASE_API_URL: config.apiUrl } : {}
+    })
+  exampleConfig: {}

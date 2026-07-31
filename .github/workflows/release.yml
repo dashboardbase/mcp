@@ -1,0 +1,125 @@
+name: Release
+
+# Bumps the version, publishes to npm and the official MCP Registry, and attaches a
+# Claude Desktop bundle to a GitHub Release. Run it from the Actions tab and pick the
+# bump type.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump'
+        required: true
+        type: choice
+        default: patch
+        options: [patch, minor, major]
+      dry_run:
+        description: 'Build and pack without publishing'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # --no-git-tag-version so the version bump and the manifest sync land in one commit.
+      - name: Bump version
+        id: bump
+        run: |
+          npm version "${{ inputs.bump }}" --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$VERSION"
+
+      - name: Sync version into server.json and manifest.json
+        run: |
+          node scripts/sync-version.mjs
+          node scripts/check-manifests.mjs
+
+      - name: Commit and tag
+        run: |
+          git add package.json package-lock.json server.json manifest.json
+          git commit -m "release: v${{ steps.bump.outputs.version }}"
+          git tag "v${{ steps.bump.outputs.version }}"
+
+      # Staged from production dependencies only, and the staged server is started
+      # before packing so a bundle that cannot launch never reaches a release.
+      - name: Build the Claude Desktop bundle
+        run: node scripts/build-bundle.mjs dashboardbase-mcp.mcpb
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push the release commit and tag
+        if: ${{ !inputs.dry_run }}
+        run: git push --follow-tags origin HEAD:${{ github.ref_name }}
+
+      # Must run after npm publish: the registry checks that the package exists and
+      # that its mcpName matches the server name being claimed.
+      - name: Install mcp-publisher
+        if: ${{ !inputs.dry_run }}
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version || true
+
+      - name: Publish to the MCP Registry
+        if: ${{ !inputs.dry_run }}
+        run: |
+          ./mcp-publisher login dns \
+            --domain dashboardbase.com \
+            --private-key "$MCP_REGISTRY_DNS_KEY"
+          ./mcp-publisher publish
+        env:
+          MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
+
+      - name: Create the GitHub Release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          gh release create "v${{ steps.bump.outputs.version }}" \
+            --title "v${{ steps.bump.outputs.version }}" \
+            --generate-notes \
+            dashboardbase-mcp.mcpb
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload the bundle as an artifact
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboardbase-mcp-${{ steps.bump.outputs.version }}
+          path: dashboardbase-mcp.mcpb
