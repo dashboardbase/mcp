@@ -78,15 +78,20 @@ jobs:
       - name: Build the Claude Desktop bundle
         run: node scripts/build-bundle.mjs dashboardbase-mcp.mcpb
 
+      # Deliberately before npm publish. Publishing is the only irreversible step here —
+      # a version number can never be reused, even after unpublishing. Pushing first
+      # means a failure (most likely branch protection refusing the bot) costs nothing:
+      # fix it and re-run. The reverse order strands a published version with no commit.
+      - name: Push the release commit and tag
+        if: ${{ !inputs.dry_run }}
+        run: git push --follow-tags origin HEAD:${{ github.ref_name }}
+
       - name: Publish to npm
+        id: npm_publish
         if: ${{ !inputs.dry_run }}
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Push the release commit and tag
-        if: ${{ !inputs.dry_run }}
-        run: git push --follow-tags origin HEAD:${{ github.ref_name }}
 
       # Must run after npm publish: the registry checks that the package exists and
       # that its mcpName matches the server name being claimed.
@@ -107,8 +112,13 @@ jobs:
         env:
           MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
 
+      # Runs even if the registry step failed, but only if npm actually published:
+      # at that point the version is public and the release plus its .mcpb should still
+      # land. The registry publish is independently re-runnable once DNS or the registry
+      # recovers. Gated on the publish outcome so a failed publish does not produce a
+      # GitHub Release for a version that is not on npm.
       - name: Create the GitHub Release
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !cancelled() && steps.npm_publish.outcome == 'success' }}
         run: |
           gh release create "v${{ steps.bump.outputs.version }}" \
             --title "v${{ steps.bump.outputs.version }}" \

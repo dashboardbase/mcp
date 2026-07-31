@@ -93,19 +93,80 @@ Requires **Node.js 20 or newer**. That's the only prerequisite.
 
 ## Using it
 
-Once installed, just ask:
+### First, check it's connected
+
+```bash
+claude mcp list
+```
+
+You should see `dashboardbase` listed as connected. Inside a Claude Code session, `/mcp` shows the server and its two tools. In other clients, look for `dashboardbase` in the MCP or tools panel.
+
+If it isn't there, the server never started — check that `node --version` is 20 or newer, and that your config file has valid JSON.
+
+### Then just ask
+
+**You don't call these tools yourself.** Describe what you want and the agent decides to call them, the same way it decides to read a file. There's no special syntax and nothing to remember.
+
+Validating something you already have:
 
 - _"Validate my dashboardbase setup file"_
-- _"Check this endpoint response against the dashboardbase KPI contract"_
 - _"Is `.dashboardbase/revenue.json` valid?"_
+- _"Check this against the dashboardbase contract"_ — then paste the JSON
 
-Over stdio the tools can read files directly, so pointing at a path is usually the fastest route:
+Validating as part of building:
 
-```
-validate_setup_file(path: ".dashboardbase/revenue.json")
-```
+- _"Build a KPI endpoint for MRR, then validate the response it returns"_
+- _"Add a gauge widget to my setup file and make sure it still validates"_
 
-For `validate_widget_response`, pass the **full response body** your endpoint returns — the `title` / `actions` / `data` / `alert` envelope — not just the inner `data` payload.
+Debugging something broken:
+
+- _"My gauge widget shows an error in dashboardbase — check what my endpoint returns against the contract"_
+- _"Why is dashboardbase rejecting my setup file?"_
+
+### What it looks like
+
+> **You:** My revenue widget isn't rendering. Check `.dashboardbase/revenue.json`.
+>
+> **Agent:** *calls `validate_setup_file`*
+>
+> ```
+> Invalid setup file — 2 errors
+>
+>   mappings[0].type  14:9  Unknown widget type "guage"
+>   mappings[1].path  22:5  Path must start with "/"
+> ```
+>
+> **Agent:** Two problems — `guage` is a typo for `gauge`, and the second mapping's
+> path is missing its leading slash. Fixing both now.
+>
+> *edits the file, calls `validate_setup_file` again*
+>
+> ```
+> Valid setup file — no errors.
+> ```
+
+That loop — validate, fix, re-validate — is the whole point. The agent closes it without you opening dashboardbase.
+
+### If the agent doesn't reach for it
+
+Name the tool directly:
+
+- _"Use validate_setup_file on .dashboardbase/revenue.json"_
+- _"Use validate_widget_response to check this"_
+
+Agents sometimes need the nudge the first time; after that they usually pick it up on their own.
+
+### The two tools
+
+| Tool | Arguments | Notes |
+| --- | --- | --- |
+| `validate_setup_file` | `content` — the file text<br>`path` — read from disk instead | Give one or the other. |
+| `validate_widget_response` | `response` — the endpoint's JSON body<br>`path` — read from disk instead<br>`widgetType` — optional, e.g. `kpi` | Inferred from the response when `widgetType` is omitted. |
+
+Two things worth knowing:
+
+- **`path` only exists over stdio.** A hosted HTTP deployment has no access to your disk, so the parameter isn't offered there — pass `content` / `response` instead.
+- **`validate_widget_response` wants the full response body** — the `title` / `actions` / `data` / `alert` envelope your endpoint actually returns, not just the inner `data` payload.
 
 ### Configuration
 
