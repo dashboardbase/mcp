@@ -1,0 +1,252 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Tools API",
+    "description": "Public validation tools for the Dashboardbase widget contract and setup files. Anonymous, strictly rate limited, and importable as-is into Postman or client generators.",
+    "version": "v1"
+  },
+  "paths": {
+    "/tools/v1/validate/widget-response": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "operationId": "ValidateWidgetResponse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ValidateWidgetResponseRequest"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateWidgetResponseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/tools/v1/validate/setup-file": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "operationId": "ToolsValidateSetupFile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolsValidateSetupFileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ToolsSetupFileErrorResponse": {
+        "required": [
+          "field",
+          "message",
+          "path"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "field": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "column": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ToolsSetupFileWarningResponse": {
+        "required": [
+          "message",
+          "path"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ToolsValidateSetupFileResponse": {
+        "required": [
+          "errors",
+          "valid",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolsSetupFileErrorResponse"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolsSetupFileWarningResponse"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidateWidgetResponseRequest": {
+        "type": "object",
+        "properties": {
+          "widgetType": {
+            "type": "string",
+            "nullable": true
+          },
+          "response": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidateWidgetResponseResponse": {
+        "required": [
+          "errors",
+          "valid",
+          "widgetType"
+        ],
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "widgetType": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetValidationErrorResponse"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "WidgetValidationErrorResponse": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "API Key needed to access the endpoints. Use \"test\" as the key.",
+        "name": "x-api-key",
+        "in": "header"
+      },
+      "DashboardbaseKey": {
+        "type": "apiKey",
+        "description": "API key required to access the Dashboardbase widget feed endpoints.",
+        "name": "x-dashboardbase-key",
+        "in": "header"
+      },
+      "Basic": {
+        "type": "http",
+        "description": "Basic auth needed to access the endpoints. Use test/test to login",
+        "scheme": "basic"
+      },
+      "Bearer": {
+        "type": "http",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        "scheme": "Bearer"
+      }
+    }
+  },
+  "security": [
+    {}
+  ],
+  "tags": [
+    {
+      "name": "Tools"
+    }
+  ]
+}
