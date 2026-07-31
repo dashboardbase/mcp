@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/dashboardbase-mcp"><img src="https://img.shields.io/npm/v/dashboardbase-mcp?color=2563eb" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@dashboardbase/mcp"><img src="https://img.shields.io/npm/v/@dashboardbase/mcp?color=2563eb" alt="npm version"></a>
   <a href="https://registry.modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP%20Registry-com.dashboardbase%2Fmcp-2563eb" alt="MCP Registry"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT License"></a>
   <a href="https://dashboardbase.com"><img src="https://img.shields.io/badge/dashboardbase.com-0a0a0a" alt="Dashboardbase"></a>
@@ -58,13 +58,13 @@ Invalid setup file — 2 errors, 1 warning
 ### Claude Code
 
 ```bash
-claude mcp add dashboardbase -- npx -y dashboardbase-mcp
+claude mcp add dashboardbase -- npx -y @dashboardbase/mcp
 ```
 
 ### One click
 
-<a href="https://insiders.vscode.dev/redirect/mcp/install?name=dashboardbase&config=%7B%22name%22%3A%22dashboardbase%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22dashboardbase-mcp%22%5D%7D"><img src="https://img.shields.io/badge/VS_Code-Install-0098FF?logo=visualstudiocode&logoColor=white" alt="Install in VS Code"></a>
-<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=dashboardbase&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImRhc2hib2FyZGJhc2UtbWNwIl19"><img src="https://img.shields.io/badge/Cursor-Install-000000?logo=cursor&logoColor=white" alt="Install in Cursor"></a>
+<a href="https://insiders.vscode.dev/redirect/mcp/install?name=dashboardbase&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40dashboardbase%2Fmcp%22%5D%7D"><img src="https://img.shields.io/badge/VS_Code-Install-0098FF?logo=visualstudiocode&logoColor=white" alt="Install in VS Code"></a>
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=dashboardbase&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBkYXNoYm9hcmRiYXNlL21jcCJdfQ=="><img src="https://img.shields.io/badge/Cursor-Install-000000?logo=cursor&logoColor=white" alt="Install in Cursor"></a>
 
 ### Claude Desktop
 
@@ -79,7 +79,7 @@ Add this to your client's MCP configuration:
   "mcpServers": {
     "dashboardbase": {
       "command": "npx",
-      "args": ["-y", "dashboardbase-mcp"]
+      "args": ["-y", "@dashboardbase/mcp"]
     }
   }
 }
@@ -122,7 +122,7 @@ Everything is optional.
 For containers or a shared internal deployment:
 
 ```bash
-npx dashboardbase-mcp --http --port 3000
+npx @dashboardbase/mcp --http --port 3000
 # or
 docker build -t dashboardbase-mcp . && docker run -p 3000:3000 dashboardbase-mcp
 ```
