@@ -333,6 +333,66 @@ test('real API response: widget type is echoed back unchanged', async () => {
   await close();
 });
 
+// Claude Code surfaces prompts as /mcp__<server>__<name>, so the name is user-visible.
+test('the validate prompt is advertised', async () => {
+  const { client, close } = await connect({});
+  const { prompts } = await client.listPrompts();
+
+  assert.deepEqual(prompts.map((prompt) => prompt.name), ['validate']);
+  assert.deepEqual(
+    prompts[0]?.arguments?.map((argument) => [argument.name, argument.required ?? false]),
+    [['target', false]],
+  );
+  await close();
+});
+
+test('the validate prompt names the target and both tools', async () => {
+  const { client, close } = await connect({ mode: 'stdio' });
+  const result = await client.getPrompt({
+    name: 'validate',
+    arguments: { target: '.dashboardbase/revenue.json' },
+  });
+
+  const text = result.messages.map((m) => (m.content as { text?: string }).text ?? '').join('\n');
+  assert.equal(result.messages[0]?.role, 'user');
+  assert.match(text, /\.dashboardbase\/revenue\.json/);
+  assert.match(text, /validate_setup_file/);
+  assert.match(text, /validate_widget_response/);
+  assert.match(text, /full response envelope/);
+  assert.match(text, /pass `path`/);
+  await close();
+});
+
+test('the validate prompt works with no target', async () => {
+  const { client, close } = await connect({ mode: 'stdio' });
+  const result = await client.getPrompt({ name: 'validate', arguments: {} });
+
+  const text = (result.messages[0]?.content as { text: string }).text;
+  assert.match(text, /\.dashboardbase\/\*\.json/);
+  assert.doesNotMatch(text, /undefined/);
+  await close();
+});
+
+test('the validate prompt drops file-reading advice over http', async () => {
+  const { client, close } = await connect({ mode: 'http' });
+  const result = await client.getPrompt({ name: 'validate', arguments: {} });
+
+  // `path` is not offered by the tools in http mode, so the prompt must not suggest it.
+  const text = (result.messages[0]?.content as { text: string }).text;
+  assert.doesNotMatch(text, /pass `path`/);
+  assert.match(text, /validate_setup_file/);
+  await close();
+});
+
+test('the prompt keeps its paragraph breaks', async () => {
+  const { client, close } = await connect({ mode: 'stdio' });
+  const result = await client.getPrompt({ name: 'validate', arguments: { target: 'x.json' } });
+
+  const text = (result.messages[0]?.content as { text: string }).text;
+  assert.match(text, /\n\n/, 'blank lines must survive assembly');
+  await close();
+});
+
 test('a custom base url is honoured', async () => {
   const { impl, calls } = stubFetch({ body: { valid: true, errors: [], warnings: [] } });
   const { client, close } = await connect({

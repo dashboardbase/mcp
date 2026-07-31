@@ -147,9 +147,19 @@ Debugging something broken:
 
 That loop — validate, fix, re-validate — is the whole point. The agent closes it without you opening dashboardbase.
 
-### If the agent doesn't reach for it
+### Or invoke it directly
 
-Name the tool directly:
+In Claude Code, the server adds a slash command — type `/` and it's in the menu:
+
+```
+/mcp__dashboardbase__validate .dashboardbase/revenue.json
+```
+
+Leave the path off and it validates whatever you're working on, or whatever you paste next. This is the deterministic route: it doesn't depend on the agent deciding the tool is relevant.
+
+> The middle segment comes from the name you installed under. If you ran `claude mcp add dashboardbase …` it's `/mcp__dashboardbase__validate`; install it as something else and that segment changes to match.
+
+In clients that don't support MCP prompts, just name the tool in plain language:
 
 - _"Use validate_setup_file on .dashboardbase/revenue.json"_
 - _"Use validate_widget_response to check this"_

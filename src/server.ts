@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { ToolsApiClient, type ToolsApiClientOptions } from './api.js';
+import { registerValidatePrompt } from './prompts/validate.js';
 import type { Mode } from './tools/shared.js';
 import { registerValidateSetupFile } from './tools/validate-setup-file.js';
 import { registerValidateWidgetResponse } from './tools/validate-widget-response.js';
@@ -30,6 +31,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
 
   registerValidateSetupFile(server, apiClient, mode);
   registerValidateWidgetResponse(server, apiClient, mode);
+  registerValidatePrompt(server, mode);
 
   return server;
 }
