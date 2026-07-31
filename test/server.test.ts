@@ -282,6 +282,57 @@ test('no api key header is sent by default', async () => {
   await close();
 });
 
+// Captured verbatim from https://api.dashboardbase.com on 2026-07-31. The API returns
+// 200 for a document that fails validation — including malformed JSON — so this, not
+// the 4xx path, is the normal failure mode and the one that must never look like a
+// broken tool.
+test('real API response: a 200 carrying valid:false is not a tool error', async () => {
+  const { impl } = stubFetch({
+    status: 200,
+    body: {
+      valid: false,
+      errors: [
+        {
+          path: '',
+          field: 'content',
+          message:
+            "Invalid JSON: 'not json at all' is an invalid JSON literal. Expected the literal 'null'. LineNumber: 0 | BytePositionInLine: 1.",
+          line: 1,
+          column: 2,
+        },
+      ],
+      warnings: [],
+    },
+  });
+  const { client, close } = await connect({ client: new ToolsApiClient({ fetchImpl: impl }) });
+
+  const result = await client.callTool({
+    name: 'validate_setup_file',
+    arguments: { content: 'not json at all' },
+  });
+
+  assert.notEqual(result.isError, true);
+  assert.match(textOf(result), /Invalid setup file — 1 error/);
+  assert.match(textOf(result), /content {2}1:2 {2}Invalid JSON/);
+  assert.equal((result.structuredContent as { valid: boolean }).valid, false);
+  await close();
+});
+
+test('real API response: widget type is echoed back unchanged', async () => {
+  const { impl } = stubFetch({ status: 200, body: { valid: true, widgetType: 'Kpi', errors: [] } });
+  const { client, close } = await connect({ client: new ToolsApiClient({ fetchImpl: impl }) });
+
+  const result = await client.callTool({
+    name: 'validate_widget_response',
+    arguments: { response: { title: 'MRR', data: { header: { title: 'MRR' } } }, widgetType: 'kpi' },
+  });
+
+  assert.notEqual(result.isError, true);
+  assert.equal(textOf(result), 'Valid Kpi response — no errors.');
+  assert.equal((result.structuredContent as { widgetType: string }).widgetType, 'Kpi');
+  await close();
+});
+
 test('a custom base url is honoured', async () => {
   const { impl, calls } = stubFetch({ body: { valid: true, errors: [], warnings: [] } });
   const { client, close } = await connect({

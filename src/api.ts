@@ -122,8 +122,10 @@ export class ToolsApiClient {
   }
 
   /**
-   * Neither the 400 nor the rate-limit response is described in the OpenAPI spec, so
-   * surface whatever the body carries and fall back to the status line.
+   * Non-2xx is an edge case: the API answers 200 with `valid: false` for documents that
+   * fail validation, including malformed JSON. This path is for genuinely broken
+   * requests and for throttling. Neither is described in the OpenAPI spec, so surface
+   * whatever the body carries and fall back to the status line.
    */
   private async toApiError(response: Response): Promise<ToolsApiError> {
     const detail = extractErrorDetail(await safeText(response));

@@ -114,3 +114,40 @@ test('a malformed result does not throw', () => {
   const text = formatSetupFileResult({ valid: false, errors: 'nope', warnings: null } as never);
   assert.equal(text, 'Invalid setup file');
 });
+
+// The payloads below were captured verbatim from https://api.dashboardbase.com on
+// 2026-07-31. They are ground truth — prefer adding cases here over inventing shapes.
+
+test('real API response: setup file with a JSON syntax error', () => {
+  const text = formatSetupFileResult({
+    valid: false,
+    errors: [
+      {
+        path: '',
+        field: 'content',
+        message:
+          "Invalid JSON: 'not json at all' is an invalid JSON literal. Expected the literal 'null'. LineNumber: 0 | BytePositionInLine: 1.",
+        line: 1,
+        column: 2,
+      },
+    ],
+    warnings: [],
+  });
+
+  // `path` comes back empty for whole-document errors, so the label falls back to
+  // `field` rather than rendering a blank column.
+  assert.equal(
+    text,
+    [
+      'Invalid setup file — 1 error',
+      '',
+      "  content  1:2  Invalid JSON: 'not json at all' is an invalid JSON literal. Expected the literal 'null'. LineNumber: 0 | BytePositionInLine: 1.",
+    ].join('\n'),
+  );
+});
+
+test('real API response: valid widget response echoes the type in PascalCase', () => {
+  // Sent widgetType "kpi"; the API normalises and echoes back "Kpi". Rendered as-is.
+  const text = formatWidgetResponseResult({ valid: true, widgetType: 'Kpi', errors: [] });
+  assert.equal(text, 'Valid Kpi response — no errors.');
+});
