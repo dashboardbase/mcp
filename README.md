@@ -119,6 +119,34 @@ args = ["-y", "@dashboardbase/mcp"]
 
 Requires **Node.js 20 or newer** — that's the only prerequisite, and only for the `npx` routes. Nothing else to configure: the validation API is public, so there's no account, key or environment variable to set.
 
+### Staying up to date
+
+Two different things arrive by two different routes, which is worth knowing:
+
+**Better error messages arrive on their own.** The server holds no schemas — it calls the live API — so as validation messages improve, you see them immediately. Nothing to update.
+
+**New tools need a package update.** If a release adds a tool, you get it once the package updates *and* your client restarts the server. A running server's tool list is fixed for the session.
+
+| How you installed | How you update |
+| --- | --- |
+| `npx` (Claude Code, Cursor, VS Code, Windsurf, Codex) | Automatic — restart your client and the next server start picks up the newest version. |
+| Claude Desktop `.mcpb` | Pinned at install. Download the new bundle from [releases](https://github.com/dashboardbase/mcp/releases/latest) and drag it in again. |
+| Docker | `docker pull` / rebuild the image. |
+
+Check what you're running:
+
+```bash
+npx -y @dashboardbase/mcp --version
+```
+
+If that reports an older version than [the latest release](https://github.com/dashboardbase/mcp/releases/latest), npm is serving cached registry metadata — a just-published version can take a few minutes to show up. Force it:
+
+```bash
+npx -y @dashboardbase/mcp@latest --version
+```
+
+Releases follow [semver](https://semver.org): new tools are a minor bump and never break existing calls, so updating is safe by default.
+
 ---
 
 ## Using it
@@ -253,6 +281,8 @@ mcp/
 ## How validation works
 
 The server doesn't carry a copy of the schemas — it calls the live dashboardbase validation API. So it **can't drift from what the platform accepts**, and error messages get better as the API does, with nothing to upgrade on your side.
+
+That applies to the validation rules and messages, not to the server itself — a release that adds a tool still needs a package update. See [Staying up to date](#staying-up-to-date).
 
 ## Related
 
