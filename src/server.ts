@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { ToolsApiClient, type ToolsApiClientOptions } from './api.js';
@@ -7,7 +9,12 @@ import { registerValidateSetupFile } from './tools/validate-setup-file.js';
 import { registerValidateWidgetResponse } from './tools/validate-widget-response.js';
 
 export const SERVER_NAME = 'dashboardbase';
-export const SERVER_VERSION = '0.1.0';
+
+// Read from package.json rather than duplicating the literal here: this version is
+// reported to MCP clients, to `--version` and to /health, and a hardcoded copy would
+// silently keep reporting the pre-release value after every bump.
+const require = createRequire(import.meta.url);
+export const SERVER_VERSION = (require('../package.json') as { version: string }).version;
 
 export interface CreateServerOptions extends ToolsApiClientOptions {
   /** `http` drops the file-reading parameters from the advertised tool schemas. */

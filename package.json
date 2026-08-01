@@ -1,6 +1,6 @@
 {
   "name": "@dashboardbase/mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "mcpName": "com.dashboardbase/mcp",
   "description": "MCP server that validates Dashboardbase widget endpoint responses and setup files against the live contract.",
   "type": "module",

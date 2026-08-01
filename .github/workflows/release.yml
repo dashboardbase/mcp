@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: 'Version bump'
+        description: 'Version bump (none = publish the version already in package.json)'
         required: true
         type: choice
         default: patch
-        options: [patch, minor, major]
+        options: [patch, minor, major, none]
       dry_run:
         description: 'Build and pack without publishing'
         required: false
@@ -54,10 +54,14 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       # --no-git-tag-version so the version bump and the manifest sync land in one commit.
+      # `none` publishes the version already in package.json — used for the first
+      # release, where the committed version is the one that should ship.
       - name: Bump version
         id: bump
         run: |
-          npm version "${{ inputs.bump }}" --no-git-tag-version
+          if [ "${{ inputs.bump }}" != "none" ]; then
+            npm version "${{ inputs.bump }}" --no-git-tag-version
+          fi
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Releasing v$VERSION"
@@ -67,10 +71,16 @@ jobs:
           node scripts/sync-version.mjs
           node scripts/check-manifests.mjs
 
+      # With bump=none the sync is a no-op, so there is nothing to commit — tag the
+      # existing HEAD instead of failing on an empty commit.
       - name: Commit and tag
         run: |
           git add package.json package-lock.json server.json manifest.json
-          git commit -m "release: v${{ steps.bump.outputs.version }}"
+          if git diff --cached --quiet; then
+            echo "No version changes to commit; tagging current HEAD."
+          else
+            git commit -m "release: v${{ steps.bump.outputs.version }}"
+          fi
           git tag "v${{ steps.bump.outputs.version }}"
 
       # Staged from production dependencies only, and the staged server is started
