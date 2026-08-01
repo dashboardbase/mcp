@@ -63,16 +63,16 @@ claude mcp add dashboardbase -- npx -y @dashboardbase/mcp
 
 ### One click
 
-<a href="https://insiders.vscode.dev/redirect/mcp/install?name=dashboardbase&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40dashboardbase%2Fmcp%22%5D%7D"><img src="https://img.shields.io/badge/VS_Code-Install-0098FF?logo=visualstudiocode&logoColor=white" alt="Install in VS Code"></a>
+<a href="https://insiders.vscode.dev/redirect/mcp/install?name=dashboardbase&config=%7B%22name%22%3A%22dashboardbase%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40dashboardbase%2Fmcp%22%5D%7D"><img src="https://img.shields.io/badge/VS_Code-Install-0098FF?logo=visualstudiocode&logoColor=white" alt="Install in VS Code"></a>
 <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=dashboardbase&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBkYXNoYm9hcmRiYXNlL21jcCJdfQ=="><img src="https://img.shields.io/badge/Cursor-Install-000000?logo=cursor&logoColor=white" alt="Install in Cursor"></a>
 
 ### Claude Desktop
 
-Download `dashboardbase-mcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. Nothing else to install — the bundle is self-contained.
+Download `dashboardbase-mcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. The bundle is self-contained — you don't even need Node.
 
-### Any other MCP client
+### Cursor, Windsurf, and most other clients
 
-Add this to your client's MCP configuration:
+These use the `mcpServers` shape. Add it to `~/.cursor/mcp.json` (Cursor), `~/.codeium/windsurf/mcp_config.json` (Windsurf), or your client's equivalent:
 
 ```json
 {
@@ -85,9 +85,39 @@ Add this to your client's MCP configuration:
 }
 ```
 
-Common locations: `~/.cursor/mcp.json` (Cursor), `.vscode/mcp.json` (VS Code), `~/.codeium/windsurf/mcp_config.json` (Windsurf), `~/.gemini/settings.json` (Gemini CLI). Check your client's docs if it isn't listed.
+### VS Code
 
-Requires **Node.js 20 or newer**. That's the only prerequisite.
+VS Code is the exception — it uses `servers` rather than `mcpServers`, and requires an explicit `type`. In `.vscode/mcp.json` (workspace) or your user profile:
+
+```json
+{
+  "servers": {
+    "dashboardbase": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@dashboardbase/mcp"]
+    }
+  }
+}
+```
+
+### Codex CLI
+
+Codex uses TOML. Easiest is the CLI:
+
+```bash
+codex mcp add dashboardbase -- npx -y @dashboardbase/mcp
+```
+
+Or by hand in `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.dashboardbase]
+command = "npx"
+args = ["-y", "@dashboardbase/mcp"]
+```
+
+Requires **Node.js 20 or newer** — that's the only prerequisite, and only for the `npx` routes. Nothing else to configure: the validation API is public, so there's no account, key or environment variable to set.
 
 ---
 
