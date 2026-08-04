@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Verify the CLI starts
+        run: node dist/index.js --version
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # The registry rejects a publish where package.json's mcpName and server.json's
+      # name disagree, or where the versions have drifted. Catch that here, not at release.
+      - name: Check manifest versions and names agree
+        run: node scripts/check-manifests.mjs
+
+      - name: Validate server.json against the registry schema
+        run: |
+          curl -fsSL https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_amd64.tar.gz \
+            | tar xz mcp-publisher
+          ./mcp-publisher validate
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t dashboardbase-mcp:ci .
+      - name: Check the health endpoint
+        run: |
+          docker run -d --name mcp -p 3000:3000 dashboardbase-mcp:ci
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://localhost:3000/health; then
+              echo "healthy"
+              docker rm -f mcp
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server did not become healthy"
+          docker logs mcp
+          docker rm -f mcp
+          exit 1

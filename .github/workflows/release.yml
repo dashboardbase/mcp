@@ -1,0 +1,145 @@
+name: Release
+
+# Bumps the version, publishes to npm and the official MCP Registry, and attaches a
+# Claude Desktop bundle to a GitHub Release. Run it from the Actions tab and pick the
+# bump type.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump (none = publish the version already in package.json)'
+        required: true
+        type: choice
+        default: patch
+        options: [patch, minor, major, none]
+      dry_run:
+        description: 'Build and pack without publishing'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # --no-git-tag-version so the version bump and the manifest sync land in one commit.
+      # `none` publishes the version already in package.json — used for the first
+      # release, where the committed version is the one that should ship.
+      - name: Bump version
+        id: bump
+        run: |
+          if [ "${{ inputs.bump }}" != "none" ]; then
+            npm version "${{ inputs.bump }}" --no-git-tag-version
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$VERSION"
+
+      - name: Sync version into server.json and manifest.json
+        run: |
+          node scripts/sync-version.mjs
+          node scripts/check-manifests.mjs
+
+      # With bump=none the sync is a no-op, so there is nothing to commit — tag the
+      # existing HEAD instead of failing on an empty commit.
+      - name: Commit and tag
+        run: |
+          git add package.json package-lock.json server.json manifest.json
+          if git diff --cached --quiet; then
+            echo "No version changes to commit; tagging current HEAD."
+          else
+            git commit -m "release: v${{ steps.bump.outputs.version }}"
+          fi
+          git tag "v${{ steps.bump.outputs.version }}"
+
+      # Staged from production dependencies only, and the staged server is started
+      # before packing so a bundle that cannot launch never reaches a release.
+      - name: Build the Claude Desktop bundle
+        run: node scripts/build-bundle.mjs dashboardbase-mcp.mcpb
+
+      # Deliberately before npm publish. Publishing is the only irreversible step here —
+      # a version number can never be reused, even after unpublishing. Pushing first
+      # means a failure (most likely branch protection refusing the bot) costs nothing:
+      # fix it and re-run. The reverse order strands a published version with no commit.
+      - name: Push the release commit and tag
+        if: ${{ !inputs.dry_run }}
+        run: git push --follow-tags origin HEAD:${{ github.ref_name }}
+
+      - name: Publish to npm
+        id: npm_publish
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Must run after npm publish: the registry checks that the package exists and
+      # that its mcpName matches the server name being claimed.
+      - name: Install mcp-publisher
+        if: ${{ !inputs.dry_run }}
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version || true
+
+      - name: Publish to the MCP Registry
+        if: ${{ !inputs.dry_run }}
+        run: |
+          ./mcp-publisher login dns \
+            --domain dashboardbase.com \
+            --private-key "$MCP_REGISTRY_DNS_KEY"
+          ./mcp-publisher publish
+        env:
+          MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
+
+      # Runs even if the registry step failed, but only if npm actually published:
+      # at that point the version is public and the release plus its .mcpb should still
+      # land. The registry publish is independently re-runnable once DNS or the registry
+      # recovers. Gated on the publish outcome so a failed publish does not produce a
+      # GitHub Release for a version that is not on npm.
+      - name: Create the GitHub Release
+        if: ${{ !cancelled() && steps.npm_publish.outcome == 'success' }}
+        run: |
+          gh release create "v${{ steps.bump.outputs.version }}" \
+            --title "v${{ steps.bump.outputs.version }}" \
+            --generate-notes \
+            dashboardbase-mcp.mcpb
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload the bundle as an artifact
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboardbase-mcp-${{ steps.bump.outputs.version }}
+          path: dashboardbase-mcp.mcpb

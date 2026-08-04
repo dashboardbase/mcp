@@ -1,0 +1,52 @@
+{
+  "manifest_version": "0.3",
+  "name": "dashboardbase",
+  "display_name": "Dashboardbase",
+  "version": "1.0.0",
+  "description": "Validate Dashboardbase widget endpoint responses and setup files against the live contract.",
+  "long_description": "Validation tools for Dashboardbase. Check a dashboard setup file, or the JSON body a widget endpoint returns, against the contract the platform actually enforces — before importing or going live.",
+  "author": {
+    "name": "dashboardbase",
+    "url": "https://dashboardbase.com"
+  },
+  "homepage": "https://dashboardbase.com",
+  "documentation": "https://github.com/dashboardbase/mcp#readme",
+  "support": "https://github.com/dashboardbase/mcp/issues",
+  "icon": "logo-dark.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dashboardbase/mcp"
+  },
+  "keywords": [
+    "dashboard",
+    "validation",
+    "widget",
+    "dashboardbase"
+  ],
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "validate_setup_file",
+      "description": "Validate a Dashboardbase setup file and report errors and warnings."
+    },
+    {
+      "name": "validate_widget_response",
+      "description": "Validate the JSON body a Dashboardbase widget endpoint returns."
+    }
+  ],
+  "compatibility": {
+    "runtimes": {
+      "node": ">=20"
+    }
+  }
+}
