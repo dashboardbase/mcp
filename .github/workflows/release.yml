@@ -81,7 +81,9 @@ jobs:
           else
             git commit -m "release: v${{ steps.bump.outputs.version }}"
           fi
-          git tag "v${{ steps.bump.outputs.version }}"
+          # Annotated, not lightweight: `git push --follow-tags` only carries annotated
+          # tags, and `gh release create` refuses a tag that is not on the remote.
+          git tag -a "v${{ steps.bump.outputs.version }}" -m "v${{ steps.bump.outputs.version }}"
 
       # Staged from production dependencies only, and the staged server is started
       # before packing so a bundle that cannot launch never reaches a release.
@@ -94,7 +96,13 @@ jobs:
       # fix it and re-run. The reverse order strands a published version with no commit.
       - name: Push the release commit and tag
         if: ${{ !inputs.dry_run }}
-        run: git push --follow-tags origin HEAD:${{ github.ref_name }}
+        # The tag is pushed as its own ref rather than relying on --follow-tags, so the
+        # push does not depend on the tag having been created a particular way. With
+        # bump=none there is no new commit and the branch push is a no-op; the tag push
+        # is the part that matters.
+        run: |
+          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "refs/tags/v${{ steps.bump.outputs.version }}"
 
       - name: Publish to npm
         id: npm_publish
