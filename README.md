@@ -27,14 +27,15 @@ This is the official [MCP server](https://modelcontextprotocol.io) for [dashboar
 
 ## What this MCP does
 
-It gives your agent two tools:
+It gives your agent three tools:
 
 | Tool | What it checks |
 | --- | --- |
 | `validate_setup_file` | A dashboardbase setup file — the JSON that provisions a whole dashboard's widgets and datasources. Reports errors and warnings with the field, line and column. |
 | `validate_widget_response` | The JSON body a widget endpoint returns, against the widget contract. Reports the path and message for each problem. |
+| `create_setup_link` | Uploads a finished setup file and returns a link that opens straight into its import preview — only when you ask for one. Refuses a file carrying credentials and lists the offending fields. |
 
-Both call the public dashboardbase validation API. **No account, no API key, nothing to configure.**
+All three call the public dashboardbase tools API. **No account, no API key, nothing to configure.**
 
 ## Before / after
 
@@ -157,7 +158,7 @@ Releases follow [semver](https://semver.org): new tools are a minor bump and nev
 claude mcp list
 ```
 
-You should see `dashboardbase` listed as connected. Inside a Claude Code session, `/mcp` shows the server and its two tools. In other clients, look for `dashboardbase` in the MCP or tools panel.
+You should see `dashboardbase` listed as connected. Inside a Claude Code session, `/mcp` shows the server and its three tools. In other clients, look for `dashboardbase` in the MCP or tools panel.
 
 If it isn't there, the server never started — check that `node --version` is 20 or newer, and that your config file has valid JSON.
 
@@ -224,12 +225,13 @@ In clients that don't support MCP prompts, just name the tool in plain language:
 
 Agents sometimes need the nudge the first time; after that they usually pick it up on their own.
 
-### The two tools
+### The three tools
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
 | `validate_setup_file` | `content` — the file text<br>`path` — read from disk instead | Give one or the other. |
 | `validate_widget_response` | `response` — the endpoint's JSON body<br>`path` — read from disk instead<br>`widgetType` — optional, e.g. `kpi` | Inferred from the response when `widgetType` is omitted. |
+| `create_setup_link` | `content` — the file text<br>`path` — read from disk instead | The link expires after 48 hours and anyone holding it can read the file, so share it directly. |
 
 Two things worth knowing:
 
@@ -266,7 +268,7 @@ Serves Streamable HTTP at `/mcp` and a health check at `/health`. It's fully sta
 mcp/
 ├── src/
 │   ├── index.ts            # CLI entry — stdio by default, --http optional
-│   ├── server.ts           # Registers the two tools
+│   ├── server.ts           # Registers the three tools
 │   ├── api.ts              # Client for the dashboardbase Tools API
 │   ├── format.ts           # Renders results as readable text
 │   ├── http.ts             # Stateless Streamable HTTP handler

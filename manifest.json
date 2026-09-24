@@ -42,6 +42,10 @@
     {
       "name": "validate_widget_response",
       "description": "Validate the JSON body a Dashboardbase widget endpoint returns."
+    },
+    {
+      "name": "create_setup_link",
+      "description": "Upload a finished setup file and get a link that opens its import preview in Dashboardbase."
     }
   ],
   "compatibility": {

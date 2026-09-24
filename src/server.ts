@@ -4,6 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { ToolsApiClient, type ToolsApiClientOptions } from './api.js';
 import { registerValidatePrompt } from './prompts/validate.js';
+import { registerCreateSetupLink } from './tools/create-setup-link.js';
 import type { Mode } from './tools/shared.js';
 import { registerValidateSetupFile } from './tools/validate-setup-file.js';
 import { registerValidateWidgetResponse } from './tools/validate-widget-response.js';
@@ -30,14 +31,16 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
       instructions:
-        'Validation tools for Dashboardbase. Use validate_setup_file to check a dashboard setup file, ' +
+        'Tools for Dashboardbase. Use validate_setup_file to check a dashboard setup file, ' +
         'and validate_widget_response to check the JSON body a widget endpoint returns. ' +
-        'Validate before telling the user their endpoint or setup file is ready.',
+        'Validate before telling the user their endpoint or setup file is ready. ' +
+        'When the user asks for a link to import a finished setup file, use create_setup_link.',
     },
   );
 
   registerValidateSetupFile(server, apiClient, mode);
   registerValidateWidgetResponse(server, apiClient, mode);
+  registerCreateSetupLink(server, apiClient, mode);
   registerValidatePrompt(server, mode);
 
   return server;

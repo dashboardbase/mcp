@@ -111,7 +111,7 @@ test('tools listed over http omit the path parameter', async () => {
     result: { tools: Array<{ name: string; inputSchema: { properties?: Record<string, unknown> } }> };
   };
 
-  assert.equal(payload.result.tools.length, 2);
+  assert.equal(payload.result.tools.length, 3);
   for (const tool of payload.result.tools) {
     assert.ok(!Object.keys(tool.inputSchema.properties ?? {}).includes('path'), `${tool.name} leaked path`);
   }

@@ -6,7 +6,7 @@
  * diagnosis, so richer messages shipped on the backend show up here for free.
  */
 
-import type { SetupFileResult, WidgetResponseResult } from './api.js';
+import type { SetupFileResult, SetupLinkResult, WidgetResponseResult } from './api.js';
 
 interface Row {
   label: string;
@@ -64,6 +64,43 @@ export function formatWidgetResponseResult(result: WidgetResponseResult): string
       message: asText(warning.message) ?? '',
     })),
   });
+}
+
+/**
+ * A created link is followed by what the agent owes the user when handing it over —
+ * a bare URL is not a handover, and the skill spells out the same points.
+ */
+export function formatSetupLinkResult(result: SetupLinkResult): string {
+  if (!result.created) {
+    const rows: Row[] = result.errors.map((error) => ({
+      label: joinPathAndField(asText(error.path), asText(error.field)),
+      position: formatPosition(error.line, error.column),
+      message: asText(error.message) ?? '',
+    }));
+    const advice =
+      result.reason === 'credentials_detected'
+        ? 'Remove these fields and try again. Credentials are entered in the import flow, never in the file — do not work around this check.'
+        : 'Fix the file (validate_setup_file shows every problem) and try again.';
+    const headline = `No link created (${result.reason})${asText(result.title) ? ` — ${asText(result.title)}` : ''}`;
+    return [headline, rows.length > 0 ? alignRows(rows) : undefined, advice]
+      .filter((part): part is string => part !== undefined)
+      .join('\n\n');
+  }
+
+  const url = asText(result.url);
+  const expiresAt = asText(result.expiresAt ?? undefined);
+  const lines = [url ? `Setup link created: ${url}` : 'Setup link created.'];
+  if (expiresAt) lines.push(`Expires: ${expiresAt}`);
+  lines.push(
+    '',
+    'When you give the user the link, tell them:',
+    '- Opening it shows a preview of the dashboard and the hosts it pulls from; nothing is created until they confirm.',
+    '- Credentials for their API are entered there, in the import flow — never in the file.',
+    '- It expires in 48 hours. The file stays in their repo, and a fresh link can be made from it any time.',
+    '- It works more than once, so they can forward it to teammates.',
+    '- Anyone holding the link can read the file, so they should send it directly, not post it publicly.',
+  );
+  return lines.join('\n');
 }
 
 function render(input: {
