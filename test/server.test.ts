@@ -50,12 +50,12 @@ function textOf(result: unknown): string {
   return content.map((part) => part.text ?? '').join('\n');
 }
 
-test('both validation tools are advertised', async () => {
+test('the validation tools and the setup link tool are advertised', async () => {
   const { client, close } = await connect({});
   const { tools } = await client.listTools();
   assert.deepEqual(
     tools.map((tool) => tool.name).sort(),
-    ['validate_setup_file', 'validate_widget_response'],
+    ['create_setup_link', 'validate_setup_file', 'validate_widget_response'],
   );
   await close();
 });
@@ -402,5 +402,58 @@ test('a custom base url is honoured', async () => {
   await client.callTool({ name: 'validate_setup_file', arguments: { content: '{}' } });
 
   assert.equal(calls[0]?.url, 'https://staging.example.com/tools/v1/validate/setup-file');
+  await close();
+});
+
+test('a setup link is created from the raw file and handed over with its caveats', async () => {
+  const { impl, calls } = stubFetch({
+    body: { id: 'V1v3rZ8Qk2mN4pR6tY8uWx', url: 'https://app.dashboardbase.com/i/V1v3rZ8Qk2mN4pR6tY8uWx', expiresAt: '2026-09-26T12:00:00Z' },
+  });
+  const { client, close } = await connect({ client: new ToolsApiClient({ fetchImpl: impl }) });
+
+  const result = await client.callTool({ name: 'create_setup_link', arguments: { content: '{"version":1}' } });
+
+  assert.equal(calls[0]?.url, 'https://api.dashboardbase.com/tools/v1/setup-links');
+  assert.equal(calls[0]?.headers['content-type'], 'text/plain');
+  assert.equal(calls[0]?.body, '{"version":1}');
+  assert.notEqual(result.isError, true);
+  assert.match(textOf(result), /Setup link created: https:\/\/app\.dashboardbase\.com\/i\/V1v3rZ8Qk2mN4pR6tY8uWx/);
+  assert.match(textOf(result), /expires in 48 hours/);
+  const structured = result.structuredContent as Record<string, unknown>;
+  assert.equal(structured['created'], true);
+  assert.equal(structured['url'], 'https://app.dashboardbase.com/i/V1v3rZ8Qk2mN4pR6tY8uWx');
+  await close();
+});
+
+test('credentials in the file are a result to act on, not a tool error', async () => {
+  const { impl } = stubFetch({
+    status: 400,
+    body: {
+      status: 400,
+      title: 'The setup file contains credential-shaped fields.',
+      reason: 'credentials_detected',
+      errors: [{ path: 'datasources[0]', field: 'headers', message: 'Headers belong in the import flow.', line: 4, column: 7 }],
+    },
+  });
+  const { client, close } = await connect({ client: new ToolsApiClient({ fetchImpl: impl }) });
+
+  const result = await client.callTool({ name: 'create_setup_link', arguments: { content: '{}' } });
+
+  assert.notEqual(result.isError, true, 'a refused file must not be flagged as a tool error');
+  assert.match(textOf(result), /No link created \(credentials_detected\)/);
+  assert.match(textOf(result), /datasources\[0\]\.headers/);
+  assert.match(textOf(result), /do not work around this check/);
+  assert.equal((result.structuredContent as { created: boolean }).created, false);
+  await close();
+});
+
+test('a setup link 400 without a reason is still a tool error', async () => {
+  const { impl } = stubFetch({ status: 400, body: { title: 'Bad request' } });
+  const { client, close } = await connect({ client: new ToolsApiClient({ fetchImpl: impl }) });
+
+  const result = await client.callTool({ name: 'create_setup_link', arguments: { content: '{}' } });
+
+  assert.equal(result.isError, true);
+  assert.match(textOf(result), /Bad request/);
   await close();
 });

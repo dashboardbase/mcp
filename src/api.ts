@@ -45,6 +45,29 @@ export interface WidgetResponseResult {
   [key: string]: unknown;
 }
 
+/** A link the user can open to preview and import the setup file. */
+export interface SetupLinkCreated {
+  created: true;
+  id?: string;
+  url?: string;
+  expiresAt?: string | null;
+  [key: string]: unknown;
+}
+
+/**
+ * The API refused to store the file, with a reason the agent can act on —
+ * `credentials_detected` above all. A result, not an error, for the same reason a
+ * failed validation is one.
+ */
+export interface SetupLinkRejected {
+  created: false;
+  reason: string;
+  title?: string;
+  errors: SetupFileError[];
+}
+
+export type SetupLinkResult = SetupLinkCreated | SetupLinkRejected;
+
 /** A transport or non-2xx failure. Validation failures are not errors — they come back as results. */
 export class ToolsApiError extends Error {
   readonly status?: number;
@@ -91,7 +114,31 @@ export class ToolsApiClient {
     return this.post<WidgetResponseResult>('/tools/v1/validate/widget-response', 'application/json', body);
   }
 
+  /**
+   * The raw file is the body, as with validation. The link is readable by anyone who
+   * holds it, which is why the tool only calls this when the user asked for one.
+   */
+  async createSetupLink(content: string): Promise<SetupLinkResult> {
+    const response = await this.send('/tools/v1/setup-links', 'text/plain', content);
+    const text = await safeText(response);
+
+    if (response.status === 400) {
+      const rejection = parseRejection(text);
+      if (rejection) return rejection;
+    }
+    if (!response.ok) throw this.toApiError(response, text);
+
+    return { ...this.parseJson<Record<string, unknown>>(response, text), created: true };
+  }
+
   private async post<T>(path: string, contentType: string, body: string): Promise<T> {
+    const response = await this.send(path, contentType, body);
+    const text = await safeText(response);
+    if (!response.ok) throw this.toApiError(response, text);
+    return this.parseJson<T>(response, text);
+  }
+
+  private async send(path: string, contentType: string, body: string): Promise<Response> {
     const headers: Record<string, string> = { 'content-type': contentType, accept: 'application/json' };
     if (this.apiKey) headers['x-api-key'] = this.apiKey;
 
@@ -106,10 +153,10 @@ export class ToolsApiClient {
     } catch (cause) {
       throw new ToolsApiError(describeNetworkFailure(cause, this.baseUrl, this.timeoutMs), { cause });
     }
+    return response;
+  }
 
-    if (!response.ok) throw await this.toApiError(response);
-
-    const text = await response.text();
+  private parseJson<T>(response: Response, text: string): T {
     if (text.trim() === '') return {} as T;
     try {
       return JSON.parse(text) as T;
@@ -127,8 +174,8 @@ export class ToolsApiClient {
    * requests and for throttling. Neither is described in the OpenAPI spec, so surface
    * whatever the body carries and fall back to the status line.
    */
-  private async toApiError(response: Response): Promise<ToolsApiError> {
-    const detail = extractErrorDetail(await safeText(response));
+  private toApiError(response: Response, body: string): ToolsApiError {
+    const detail = extractErrorDetail(body);
     const retryAfterSeconds = parseRetryAfter(response.headers.get('retry-after'));
 
     if (response.status === 429) {
@@ -154,6 +201,21 @@ async function safeText(response: Response): Promise<string> {
     return await response.text();
   } catch {
     return '';
+  }
+}
+
+function parseRejection(body: string): SetupLinkRejected | undefined {
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    if (typeof parsed?.['reason'] !== 'string') return undefined;
+    return {
+      created: false,
+      reason: parsed['reason'],
+      title: typeof parsed['title'] === 'string' ? parsed['title'] : undefined,
+      errors: Array.isArray(parsed['errors']) ? (parsed['errors'] as SetupFileError[]) : [],
+    };
+  } catch {
+    return undefined;
   }
 }
 
