@@ -14,10 +14,10 @@ import {
 } from './shared.js';
 
 const DESCRIPTION = [
-  'Validate the JSON body a Dashboardbase widget endpoint returns, against the widget contract.',
+  'Validate the JSON body a dashboardbase widget endpoint returns, against the widget contract.',
   'Pass the complete response body — the envelope with title, actions, data and alert — exactly as the endpoint returns it, not just the inner `data` payload.',
   'Returns whether the response is valid, the widget type it was checked against, and the path and message of each problem.',
-  'Use this after building or changing an endpoint that Dashboardbase will poll.',
+  'Use this after building or changing an endpoint that dashboardbase will poll.',
 ].join(' ');
 
 const RESPONSE_DESCRIPTION = [
@@ -29,7 +29,7 @@ export function registerValidateWidgetResponse(server: McpServer, client: ToolsA
   server.registerTool(
     'validate_widget_response',
     {
-      title: 'Validate Dashboardbase widget response',
+      title: 'Validate dashboardbase widget response',
       description: DESCRIPTION,
       inputSchema: {
         response: z.unknown().describe(RESPONSE_DESCRIPTION).optional(),

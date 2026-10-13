@@ -31,7 +31,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
       instructions:
-        'Tools for Dashboardbase. Use validate_setup_file to check a dashboard setup file, ' +
+        'Tools for dashboardbase. Use validate_setup_file to check a dashboard setup file, ' +
         'and validate_widget_response to check the JSON body a widget endpoint returns. ' +
         'Validate before telling the user their endpoint or setup file is ready. ' +
         'When the user asks for a link to import a finished setup file, use create_setup_link.',

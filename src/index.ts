@@ -18,7 +18,7 @@ interface Options {
 
 const USAGE = `dashboardbase-mcp ${SERVER_VERSION}
 
-Validate Dashboardbase widget endpoint responses and setup files.
+Validate dashboardbase widget endpoint responses and setup files.
 
 Usage:
   dashboardbase-mcp                 Run over stdio (default; for Claude Code, Cursor, etc.)

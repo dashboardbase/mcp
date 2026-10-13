@@ -1,5 +1,5 @@
 /**
- * Client for the public Dashboardbase Tools API.
+ * Client for the public dashboardbase Tools API.
  *
  * The API decides what is valid; this client only transports. Response bodies are
  * passed through as-is (unknown fields included) so improvements to the API's
@@ -181,7 +181,7 @@ export class ToolsApiClient {
     if (response.status === 429) {
       const wait = retryAfterSeconds === undefined ? '' : ` Retry in ${retryAfterSeconds}s.`;
       return new ToolsApiError(
-        `Rate limited by the Dashboardbase validation API.${wait}${detail ? ` ${detail}` : ''}`,
+        `Rate limited by the dashboardbase validation API.${wait}${detail ? ` ${detail}` : ''}`,
         { status: response.status, retryAfterSeconds },
       );
     }
