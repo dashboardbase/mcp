@@ -16,10 +16,10 @@
   <a href="https://www.npmjs.com/package/@dashboardbase/mcp"><img src="https://img.shields.io/npm/v/@dashboardbase/mcp?color=2563eb" alt="npm version"></a>
   <a href="https://registry.modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP%20Registry-com.dashboardbase%2Fmcp-2563eb" alt="MCP Registry"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT License"></a>
-  <a href="https://dashboardbase.com"><img src="https://img.shields.io/badge/dashboardbase.com-0a0a0a" alt="Dashboardbase"></a>
+  <a href="https://www.dashboardbase.com"><img src="https://img.shields.io/badge/dashboardbase.com-0a0a0a" alt="dashboardbase"></a>
 </p>
 
-This is the official [MCP server](https://modelcontextprotocol.io) for [dashboardbase](https://dashboardbase.com). Add it to your AI tool and it can check a widget endpoint's response — or a whole dashboard setup file — against the contract dashboardbase actually enforces, before you ever open the app.
+This is the official [MCP server](https://modelcontextprotocol.io) for [dashboardbase](https://www.dashboardbase.com). Add it to your AI tool and it can check a widget endpoint's response — or a whole dashboard setup file — against the contract dashboardbase actually enforces, before you ever open the app.
 
 > The [dashboardbase skill](https://github.com/dashboardbase/skills) teaches your agent the JSON contract. This MCP lets it **check its own work**. Use both: the skill gets the shape right, the MCP proves it.
 
@@ -69,7 +69,7 @@ claude mcp add dashboardbase -- npx -y @dashboardbase/mcp
 
 ### Claude Desktop
 
-Download `dashboardbase-mcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. The bundle is self-contained — you don't even need Node.
+Download `dashboardbasemcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. The bundle is self-contained — you don't even need Node.
 
 ### Cursor, Windsurf, and most other clients
 
@@ -288,8 +288,8 @@ That applies to the validation rules and messages, not to the server itself — 
 
 ## Related
 
-- **[dashboardbase](https://dashboardbase.com)** — the product. Build, host, and share dashboards from your APIs.
-- **[dashboardbase skill](https://github.com/dashboardbase/skills)** — teaches your agent the JSON contract so it writes correct endpoints in the first place. Pairs directly with this MCP.
+- **[dashboardbase](https://www.dashboardbase.com)** — the product. Build, host, and share dashboards from your APIs.
+- **[dashboardbase skill](https://github.com/dashboardbase/skills)** — free to install; teaches your agent the JSON contract so it writes correct endpoints in the first place. Pairs directly with this MCP.
 - **[Documentation](https://app.dashboardbase.com/documentation)** — widget reference, JSON contract, webhook setup.
 
 ## Contributing
@@ -300,4 +300,6 @@ Found a gap or a confusing error? Open an issue. Note that the validation rules 
 
 MIT — see [LICENSE](LICENSE). Fork it, adapt it, ship it.
 
-The MIT license covers the code in this repo. "dashboardbase" is a trademark of dashboardbase — see [dashboardbase.com](https://dashboardbase.com). You're free to use and adapt the server; please don't use the name or branding in a way that implies official affiliation.
+The MIT license covers the code in this repo — not the dashboardbase name or logo, which belong to Kompile ApS. You're free to use and adapt the server; please don't use the name or branding in a way that implies official affiliation.
+
+The [dashboardbase skill](https://github.com/dashboardbase/skills) is licensed differently: free to install and use, but not open source.
