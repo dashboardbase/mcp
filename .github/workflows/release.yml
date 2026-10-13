@@ -126,6 +126,13 @@ jobs:
           ./mcp-publisher login dns \
             --domain dashboardbase.com \
             --private-key "$MCP_REGISTRY_DNS_KEY"
+          # npm takes a few minutes to serve a just-published version, and the registry
+          # refuses a version npm does not serve yet — so wait for it first.
+          VERSION="${{ steps.bump.outputs.version }}"
+          for i in $(seq 1 30); do
+            npm view "@dashboardbase/mcp@$VERSION" version --prefer-online >/dev/null 2>&1 && break
+            echo "Waiting for npm to serve $VERSION ($i/30)…"; sleep 20
+          done
           ./mcp-publisher publish
         env:
           MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}

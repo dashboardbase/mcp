@@ -69,7 +69,7 @@ claude mcp add dashboardbase -- npx -y @dashboardbase/mcp
 
 ### Claude Desktop
 
-Download `dashboardbasemcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. The bundle is self-contained — you don't even need Node.
+Download `dashboardbase-mcp.mcpb` from the [latest release](https://github.com/dashboardbase/mcp/releases/latest) and drag it into Claude Desktop's extensions settings. The bundle is self-contained — you don't even need Node.
 
 ### Cursor, Windsurf, and most other clients
 

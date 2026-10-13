@@ -1,0 +1,45 @@
+name: Publish to the MCP Registry
+
+# Re-publishes the version already in server.json to the official MCP Registry,
+# without bumping, tagging or touching npm. For when Release published to npm but
+# the registry step failed — re-running Release would bump the version again.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Wait for npm to serve this version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          for i in $(seq 1 30); do
+            npm view "@dashboardbase/mcp@$VERSION" version --prefer-online >/dev/null 2>&1 && exit 0
+            echo "Waiting for npm to serve $VERSION ($i/30)…"; sleep 20
+          done
+          echo "::error::npm does not serve @dashboardbase/mcp@$VERSION — publish it with Release first."
+          exit 1
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version || true
+
+      - name: Publish
+        run: |
+          ./mcp-publisher login dns \
+            --domain dashboardbase.com \
+            --private-key "$MCP_REGISTRY_DNS_KEY"
+          ./mcp-publisher publish
+        env:
+          MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
