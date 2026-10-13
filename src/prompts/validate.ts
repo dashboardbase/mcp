@@ -19,9 +19,9 @@ export function registerValidatePrompt(server: McpServer, mode: Mode): void {
   server.registerPrompt(
     'validate',
     {
-      title: 'Validate a Dashboardbase file',
+      title: 'Validate a dashboardbase file',
       description:
-        'Validate a Dashboardbase setup file or widget endpoint response, then fix whatever is wrong.',
+        'Validate a dashboardbase setup file or widget endpoint response, then fix whatever is wrong.',
       argsSchema: {
         target: z
           .string()
@@ -50,16 +50,16 @@ export function registerValidatePrompt(server: McpServer, mode: Mode): void {
 function buildInstruction(target: string, mode: Mode): string {
   const subject =
     target !== ''
-      ? `Validate ${target} against the Dashboardbase contract.`
+      ? `Validate ${target} against the dashboardbase contract.`
       : mode === 'stdio'
-        ? 'Validate my Dashboardbase file against the contract. If I have not said which one, look for a setup file at .dashboardbase/*.json in this project, or for the widget endpoint we have been working on. Ask me only if neither is obvious.'
-        : 'Validate the Dashboardbase content I have provided against the contract. Ask me for it if I have not pasted anything yet.';
+        ? 'Validate my dashboardbase file against the contract. If I have not said which one, look for a setup file at .dashboardbase/*.json in this project, or for the widget endpoint we have been working on. Ask me only if neither is obvious.'
+        : 'Validate the dashboardbase content I have provided against the contract. Ask me for it if I have not pasted anything yet.';
 
   const lines = [
     subject,
     '',
     'Pick the right tool:',
-    '- `validate_setup_file` for a Dashboardbase setup file — the JSON that provisions a dashboard, usually at `.dashboardbase/*.json`.',
+    '- `validate_setup_file` for a dashboardbase setup file — the JSON that provisions a dashboard, usually at `.dashboardbase/*.json`.',
     '- `validate_widget_response` for the JSON body a widget endpoint returns. Pass the **full response envelope** (`title`, `actions`, `data`, `alert`) exactly as the endpoint returns it, not just the inner `data` payload.',
   ];
 

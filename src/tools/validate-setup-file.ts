@@ -14,7 +14,7 @@ import {
 } from './shared.js';
 
 const DESCRIPTION = [
-  'Validate a Dashboardbase setup file (the declarative JSON that provisions a dashboard, usually stored at .dashboardbase/<name>.json).',
+  'Validate a dashboardbase setup file (the declarative JSON that provisions a dashboard, usually stored at .dashboardbase/<name>.json).',
   'Returns whether the file is valid plus any errors and warnings, with the JSON path, field and line/column of each problem.',
   'Use this after writing or editing a setup file, before telling the user it is ready to import.',
 ].join(' ');
@@ -23,7 +23,7 @@ export function registerValidateSetupFile(server: McpServer, client: ToolsApiCli
   server.registerTool(
     'validate_setup_file',
     {
-      title: 'Validate Dashboardbase setup file',
+      title: 'Validate dashboardbase setup file',
       description: DESCRIPTION,
       inputSchema: {
         content: z

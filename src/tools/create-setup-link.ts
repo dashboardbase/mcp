@@ -14,7 +14,7 @@ import {
 } from './shared.js';
 
 const DESCRIPTION = [
-  'Upload a Dashboardbase setup file and get back a link that opens straight into its import preview in Dashboardbase.',
+  'Upload a dashboardbase setup file and get back a link that opens straight into its import preview in dashboardbase.',
   'Only call this when the user has asked for a link: the file leaves their machine, and anyone holding the link can read it for 48 hours.',
   'Validate the file with validate_setup_file first. A file carrying credential-shaped fields is refused with the offending fields listed — remove them, never work around the check.',
 ].join(' ');
@@ -23,7 +23,7 @@ export function registerCreateSetupLink(server: McpServer, client: ToolsApiClien
   server.registerTool(
     'create_setup_link',
     {
-      title: 'Create Dashboardbase setup link',
+      title: 'Create dashboardbase setup link',
       description: DESCRIPTION,
       inputSchema: {
         content: z

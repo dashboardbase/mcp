@@ -6,7 +6,7 @@ startCommand:
       apiUrl:
         type: string
         title: API base URL
-        description: Base URL of the Dashboardbase API. Leave unset to use the public API.
+        description: Base URL of the dashboardbase API. Leave unset to use the public API.
         default: https://api.dashboardbase.com
     required: []
   commandFunction: |-
