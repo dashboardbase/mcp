@@ -26,19 +26,29 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+env:
+  # Keep in step with ci.yml and publish-registry.yml.
+  MCP_PUBLISHER_VERSION: v1.8.1
+
 jobs:
   release:
+    # Releases are cut from main only. Dispatched from another branch, this would push
+    # the release commit to that branch and publish code that never reached main.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           registry-url: https://registry.npmjs.org
-          cache: npm
+          # No dependency cache in a job that holds write and publish credentials: a
+          # poisoned cache entry would run with them. The install takes seconds anyway.
+          package-manager-cache: false
 
       - run: npm ci
 
@@ -116,23 +126,29 @@ jobs:
       - name: Install mcp-publisher
         if: ${{ !inputs.dry_run }}
         run: |
-          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+          curl -fsSL --retry 3 \
+            "https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER_VERSION/mcp-publisher_linux_amd64.tar.gz" \
             | tar xz mcp-publisher
           ./mcp-publisher --version || true
 
       - name: Publish to the MCP Registry
         if: ${{ !inputs.dry_run }}
         run: |
-          ./mcp-publisher login dns \
-            --domain dashboardbase.com \
-            --private-key "$MCP_REGISTRY_DNS_KEY"
           # npm takes a few minutes to serve a just-published version, and the registry
-          # refuses a version npm does not serve yet — so wait for it first.
+          # refuses a version npm does not serve yet — so wait for it first, and say so
+          # plainly if it never shows up instead of letting the registry fail obscurely.
           VERSION="${{ steps.bump.outputs.version }}"
           for i in $(seq 1 30); do
             npm view "@dashboardbase/mcp@$VERSION" version --prefer-online >/dev/null 2>&1 && break
+            if [ "$i" = 30 ]; then
+              echo "::error::npm still does not serve $VERSION after 10 minutes. Run the 'Publish to the MCP Registry' workflow once it does."
+              exit 1
+            fi
             echo "Waiting for npm to serve $VERSION ($i/30)…"; sleep 20
           done
+          ./mcp-publisher login dns \
+            --domain dashboardbase.com \
+            --private-key "$MCP_REGISTRY_DNS_KEY"
           ./mcp-publisher publish
         env:
           MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
@@ -154,7 +170,7 @@ jobs:
 
       - name: Upload the bundle as an artifact
         if: ${{ inputs.dry_run }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dashboardbase-mcp-${{ steps.bump.outputs.version }}
           path: dashboardbase-mcp.mcpb

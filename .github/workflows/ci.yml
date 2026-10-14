@@ -9,17 +9,30 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR supersedes the run in progress. Runs on main are never cancelled,
+# so every merge commit gets a complete result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  # Pinned so a new mcp-publisher release cannot change what CI validates against
+  # without a commit here. Keep in step with release.yml and publish-registry.yml.
+  MCP_PUBLISHER_VERSION: v1.8.1
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        # Every version engines.node claims, so a break on the oldest is caught here.
         node: ['20', '22', '24']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -37,10 +50,11 @@ jobs:
 
   manifests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -54,20 +68,22 @@ jobs:
 
       - name: Validate server.json against the registry schema
         run: |
-          curl -fsSL https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_amd64.tar.gz \
+          curl -fsSL --retry 3 \
+            "https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER_VERSION/mcp-publisher_linux_amd64.tar.gz" \
             | tar xz mcp-publisher
           ./mcp-publisher validate
 
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build the image
         run: docker build -t dashboardbase-mcp:ci .
       - name: Check the health endpoint
         run: |
           docker run -d --name mcp -p 3000:3000 dashboardbase-mcp:ci
-          for attempt in $(seq 1 20); do
+          for attempt in $(seq 1 30); do
             if curl -fsS http://localhost:3000/health; then
               echo "healthy"
               docker rm -f mcp

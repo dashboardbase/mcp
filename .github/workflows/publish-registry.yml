@@ -9,13 +9,18 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep in step with ci.yml and release.yml.
+  MCP_PUBLISHER_VERSION: v1.8.1
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -31,7 +36,8 @@ jobs:
 
       - name: Install mcp-publisher
         run: |
-          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+          curl -fsSL --retry 3 \
+            "https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER_VERSION/mcp-publisher_linux_amd64.tar.gz" \
             | tar xz mcp-publisher
           ./mcp-publisher --version || true
 
