@@ -1,0 +1,11 @@
+{
+  // Compiles the tests to plain JS so they run on every supported Node version —
+  // Node 20 cannot load .ts files. The tests import the built package from ../dist.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist-test",
+    "declaration": false
+  },
+  "include": ["*.ts"]
+}
